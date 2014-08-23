@@ -110,7 +110,8 @@ importance
 ```
 
 ## Results
-1. I built a model using random forest method using 53 variables. This model has an out of sample error rate of **`r paste(round((1-confusion.rf[[3]][1])*100, 2), "%", sep="")`**.
+1. I built a model using random forest method using 53 variables with a prediction accuracy of **`r accuracy.rf`**.
+2. Although random forest has a built-in method to cross validate (the out of bag error is the "estimate" of out of sample error), I still calculated the out of sample error rate by applying the model to the partitioned testing set. The out of sample error is 1-accuracy of model applied to the testing data set, in the case of random forest model, it is **`r paste(round((1-confusion.rf[[3]][1])*100, 2), "%", sep="")`**. The out of bag error from random forest model using training data set (**0.7%**) is indeed very close to the out of sample error (**`r paste(round((1-confusion.rf[[3]][1])*100, 2), "%", sep="")`**) calculated manually.
 2. Prediction of real test set.
 ```{r Testing the real test set}
 pred.assignment <- predict(model.rf, newdata=assignment.filtered)

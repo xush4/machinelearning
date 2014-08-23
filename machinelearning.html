@@ -81,7 +81,7 @@ fileURL2 &lt;- &quot;https://d396qusza40orc.cloudfront.net/predmachlearn/pml-tes
 download.file(fileURL1, destfile=&quot;pml-training.csv&quot;)
 download.file(fileURL2, destfile=&quot;pml-testing.csv&quot;)
 date()</code></pre>
-<pre><code>## [1] &quot;Sat Aug 23 10:53:32 2014&quot;</code></pre>
+<pre><code>## [1] &quot;Sat Aug 23 12:55:41 2014&quot;</code></pre>
 <pre class="r"><code>df &lt;- read.csv(&quot;pml-training.csv&quot;, na.strings=c(&quot;NA&quot;, &quot;&quot;))
 assignment &lt;- read.csv(&quot;pml-testing.csv&quot;, na.strings=c(&quot;NA&quot;, &quot;&quot;))
 df.col.has.na &lt;- apply(df, 2, function(x) {any(is.na(x))})
@@ -294,7 +294,8 @@ importance</code></pre>
 <div id="results" class="section level2">
 <h2>Results</h2>
 <ol style="list-style-type: decimal">
-<li>I built a model using random forest method using 53 variables. This model has an out of sample error rate of <strong>0.71%</strong>.</li>
+<li>I built a model using random forest method using 53 variables with a prediction accuracy of <strong>0.9929</strong>.</li>
+<li>Although random forest has a built-in method to cross validate (the out of bag error is the “estimate” of out of sample error), I still calculated the out of sample error rate by applying the model to the partitioned testing set. The out of sample error is 1-accuracy of model applied to the testing data set, in the case of random forest model, it is <strong>0.71%</strong>. The out of bag error from random forest model using training data set (<strong>0.7%</strong>) is indeed very close to the out of sample error (<strong>0.71%</strong>) calculated manually.</li>
 <li>Prediction of real test set.</li>
 </ol>
 <pre class="r"><code>pred.assignment &lt;- predict(model.rf, newdata=assignment.filtered)
