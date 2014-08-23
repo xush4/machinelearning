@@ -1,0 +1,122 @@
+---
+title: "Machine Learning"
+author: "H Huang"
+date: "Thursday, August 21, 2014"
+output: html_document
+---
+## Synopsis
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit fueled large amount of data collection about personal activity. In this project, I am going to predict how well the person performed in their exercise through machine learning. 
+
+## Data Processing
+
+### Getting and cleaning data
+
+- The training data were downloaded from [here](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv).
+- The real tests data I am going to answer were from [here](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv).
+- Download data file.
+- Record download time.
+- Read in data, masking blank input with "NA".
+- Remove columns with "NA".
+- Remove columns that are unlikely associated with exercise ( X, raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp, new_window, num_window).
+
+```{r Getting and cleaning data}
+setInternet2(TRUE)
+fileURL1 <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+fileURL2 <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+download.file(fileURL1, destfile="pml-training.csv")
+download.file(fileURL2, destfile="pml-testing.csv")
+date()
+df <- read.csv("pml-training.csv", na.strings=c("NA", ""))
+assignment <- read.csv("pml-testing.csv", na.strings=c("NA", ""))
+df.col.has.na <- apply(df, 2, function(x) {any(is.na(x))})
+df.no.na <- df[,!df.col.has.na]
+assignment.col.has.na <- apply(assignment, 2, function(x) {any(is.na(x))})
+assignment.no.na <- assignment[,!assignment.col.has.na]
+df.filtered <- df.no.na[, -c(1,3,4,5,6,7)]
+assignment.filtered <- assignment.no.na[, -c(1,3,4,5,6,7)]
+```
+
+### Modeling
+
+#### Model Building
+
+- The whole training data were partitioned into training and testing set (60:40).
+- Four models were built using 4 different methods: tree (rpart), bagging (treebag), boosting (gbm) and random forest (randomForest).
+- Four models were applied to the testing data set.
+- Accurary of models were compared.
+- Most accurate model was selected.
+
+```{r Modeling, results='hide'}
+library(caret)
+library(randomForest)
+library(doParallel)
+registerDoParallel(cores = 2)
+set.seed(1234)
+inTrain <- createDataPartition(y=df.filtered$classe, p=0.6, list=FALSE)
+training <- df.filtered[inTrain,]
+testing <- df.filtered[-inTrain,]
+
+model.rpart <- train(classe ~ ., method="rpart", data=training)
+model.bag <- train(classe ~ ., method="treebag", data=training)
+model.gbm <- train(classe ~ ., method="gbm", data=training)
+model.rf <- randomForest(classe ~ ., data=training)
+
+pred.rpart <- predict(model.rpart, newdata=testing)
+pred.bag <- predict(model.bag, newdata=testing)
+pred.gbm <- predict(model.gbm, newdata=testing)
+pred.rf <- predict(model.rf, newdata=testing)
+
+confusion.rpart <- confusionMatrix(pred.rpart, testing$classe)
+confusion.bag <- confusionMatrix(pred.bag, testing$classe)
+confusion.gbm <- confusionMatrix(pred.gbm, testing$classe)
+confusion.rf <- confusionMatrix(pred.rf, testing$classe)
+```
+
+#### Model Selection
+
+- Accuracy comparison
+```{r Accuracy of Models}
+accuracy.rpart <- confusion.rpart$overall[1]
+accuracy.bag <- confusion.bag$overall[1]
+accuracy.gbm <- confusion.gbm$overall[1]
+accuracy.rf <- confusion.rf$overall[1]
+
+accuracy <- cbind(accuracy.rpart, accuracy.bag, accuracy.gbm, accuracy.rf)
+colnames(accuracy) <- c("Tree Model", "Bagging Model", "Boosting Model", "Random Forest Model")
+rownames(accuracy) <- "Accuracy"
+accuracy
+```
+#### Final Model
+- Random forest model was selected as the final model since it has the greatest prediction accuracy.
+- Summary of random forest model
+```{r Summary of random forest model}
+model.rf
+```
+- Output of confusionMatrix of random forest model
+```{r confusionMatrix of prediction using random forest model}
+confusion.rf
+```
+- Tree of random forest model (only the first 20 (out of 1300+) lines) of tree 1 were shown)
+```{r Tree of random forest model}
+head(getTree(model.rf, 1), n=20)
+```
+
+- Importance of variables of random forest model
+```{r Importance of variables}
+importance <- model.rf$importance
+importance <- importance[order(importance[,1], decreasing=TRUE),]
+importance
+```
+
+## Results
+1. I built a model using random forest method using 53 variables. This model has an out of sample error rate of **`r paste(round((1-confusion.rf[[3]][1])*100, 2), "%", sep="")`**.
+2. Prediction of real test set.
+```{r Testing the real test set}
+pred.assignment <- predict(model.rf, newdata=assignment.filtered)
+pred.assignment
+```
+## Software environment
+```{r software environment}
+sessionInfo()
+```
